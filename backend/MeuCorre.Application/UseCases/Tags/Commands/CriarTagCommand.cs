@@ -5,6 +5,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
+using MeuCorre.Domain.Interfaces.Repositories;
+using MeuCorre.Domain.Entities;
 
 namespace MeuCorre.Application.UseCases.Tags.Commands
 {
@@ -22,9 +24,27 @@ namespace MeuCorre.Application.UseCases.Tags.Commands
 
     internal class CriarTagCommandHandler : IRequestHandler<CriarTagCommand, (string, bool)>
     {
-        public Task<(string, bool)> Handle(CriarTagCommand request, CancellationToken cancellationToken)
+        private readonly ITagRepository _tagRepository;
+        
+        public CriarTagCommandHandler(ITagRepository tagRepository)
         {
-            throw new NotImplementedException();
+            _tagRepository = tagRepository;
+        }
+
+        public async Task<(string, bool)> Handle(CriarTagCommand request, CancellationToken cancellationToken)
+        {
+            var existe = await _tagRepository.NomeExisteParaUsuarioAsync(request.Nome, request.UsuarioId);
+            
+            if(existe)
+            {
+                return ("Você já cadastrou uma tag com este nome", false);
+            }
+
+            var tag = new Tag(request.UsuarioId, request.Nome, request.Cor);
+
+            await _tagRepository.AdicionarAsync(tag);
+
+            return ("Tag criada com sucesso", true);
         }
     }
 }
